@@ -1,6 +1,6 @@
 class MustachioViewController < UIViewController
   def loadView
-    @debug = true
+    @debug = false
 
     self.view = UIView.alloc.initWithFrame(UIScreen.mainScreen.applicationFrame)
     view.backgroundColor = UIColor.redColor if @debug
@@ -12,13 +12,24 @@ class MustachioViewController < UIViewController
 
     toolbar = UIToolbar.new
     toolbar.barStyle = UIBarStyleBlack
-    toolbar.translucent = true
+    #toolbar.translucent = true
+
     # TODO weird one pixel offset, not thinking about this too much more right now
     toolbar.frame = CGRectMake(0, view.bounds.size.height-44+1, view.bounds.size.width, 44)
     toolbar.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight | UIViewAutoresizingFlexibleTopMargin
-    toolbar.items = [UIBarButtonItem.alloc.initWithBarButtonSystemItem(UIBarButtonSystemItemCamera,
-                                                                target:self,
-                                                                action:'presentImagePickerController:')]
+    toolbar.items = [
+      UIBarButtonItem.alloc.initWithBarButtonSystemItem(UIBarButtonSystemItemCamera,
+                                                 target:self,
+                                                 action:'presentImagePickerController:').tap { |b| b.style = UIBarButtonItemStyleBordered },
+      UIBarButtonItem.alloc.initWithBarButtonSystemItem(UIBarButtonSystemItemFlexibleSpace, target:nil, action:nil),
+      UIBarButtonItem.alloc.initWithBarButtonSystemItem(UIBarButtonSystemItemAction,
+                                                 target:self,
+                                                 action:'presentImagePickerController:').tap { |b| b.style = UIBarButtonItemStyleBordered },
+      UIBarButtonItem.alloc.initWithBarButtonSystemItem(UIBarButtonSystemItemFlexibleSpace, target:nil, action:nil),
+      UIBarButtonItem.alloc.initWithBarButtonSystemItem(UIBarButtonSystemItemSave,
+                                                 target:self,
+                                                 action:'presentImagePickerController:').tap { |b| b.style = UIBarButtonItemStyleBordered },
+    ]
     view.addSubview(toolbar)
   end
 
@@ -34,7 +45,7 @@ class MustachioViewController < UIViewController
 
     imagePickerController = UIImagePickerController.new
     imagePickerController.delegate = self
-    imagePickerController.allowsEditing = true
+    #imagePickerController.allowsEditing = true
     presentModalViewController(imagePickerController, animated:true)
   end
 
