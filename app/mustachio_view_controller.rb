@@ -3,7 +3,7 @@ class MustachioViewController < UIViewController
     self.view = UIView.alloc.initWithFrame(UIScreen.mainScreen.applicationFrame)
     view.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight
     view.autoresizesSubviews = true
-    view.backgroundColor = UIColor.redColor
+    #view.backgroundColor = UIColor.redColor
 
     @imageView = UIImageView.alloc.initWithFrame(view.bounds)
     @imageView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight
@@ -53,11 +53,11 @@ class MustachioViewController < UIViewController
     # CoreImage used a coordinate system which is flipped on the Y axis
     # compared to UIKit. Also, a UIImageView can return an image larger than
     # itself. To properly translate points, we use an affine transform.
-    transform = CGAffineTransformMakeScale(@imageView.bounds.size.width / @imageView.image.size.width, -1 * (@imageView.bounds.size.height / @imageView.image.size.height))
+    transform = CGAffineTransformMakeScale(@imageView.bounds.size.width / @imageView.image.size.width, -(@imageView.bounds.size.height / @imageView.image.size.height))
     transform = CGAffineTransformTranslate(transform, 0, -@imageView.image.size.height)
 
     image = CIImage.imageWithCGImage(@imageView.image.CGImage)
-    @detector ||= CIDetector.detectorOfType CIDetectorTypeFace, context:nil, options: { CIDetectorAccuracy: CIDetectorAccuracyHigh }
+    @detector ||= CIDetector.detectorOfType(CIDetectorTypeFace, context:nil, options: { CIDetectorAccuracy: CIDetectorAccuracyHigh })
     @detector.featuresInImage(image).each do |feature|
       # We need the mouth and eyes positions to determine where the mustache
       # should be added.
