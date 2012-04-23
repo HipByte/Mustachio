@@ -1,12 +1,10 @@
 class MustachioViewController < UIViewController
   def loadView
     self.view = UIImageView.alloc.init
-    @debug_face = false # Set to true to debug face features.
+    @debug_face = true # Set to true to debug face features.
   end
 
   def viewDidLoad
-    @images = %w{matz guido kay jmccolor}.map { |name| UIImage.imageNamed(name + '.jpg') }
-    view.image = @images.first
     view.contentMode = UIViewContentModeScaleAspectFit
     view.userInteractionEnabled = true
 
@@ -19,7 +17,24 @@ class MustachioViewController < UIViewController
   end
 
   def viewDidAppear(animated)
-    mustachify
+    return if view.image
+
+    # TODO check that images can be loaded in some way.
+    #UIImagePickerController.isSourceTypeAvailable(UIImagePickerControllerSourceTypePhotoLibrary)
+    #UIImagePickerController.isSourceTypeAvailable(UIImagePickerControllerSourceTypeCamera)
+    #UIImagePickerController.isSourceTypeAvailable(UIImagePickerControllerSourceTypeSavedPhotosAlbum)
+
+    imagePickerController = UIImagePickerController.new
+    imagePickerController.delegate = self
+    imagePickerController.allowsEditing = true
+    presentModalViewController(imagePickerController, animated:true)
+  end
+
+  def imagePickerController(imagePickerController, didFinishPickingMediaWithInfo:info)
+    if view.image = info[UIImagePickerControllerEditedImage] || info[UIImagePickerControllerOriginalImage]
+      mustachify
+    end
+    dismissModalViewControllerAnimated(true)
   end
 
   def mustachify
@@ -70,10 +85,10 @@ class MustachioViewController < UIViewController
     end
   end
 
-  def shouldAutorotateToInterfaceOrientation(*)
-    mustachify
-    true
-  end
+  #def shouldAutorotateToInterfaceOrientation(*)
+    #mustachify
+    #true
+  #end
 
   def swipePreviousGesture(gesture)
     idx = @images.index(view.image)
