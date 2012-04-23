@@ -1,12 +1,11 @@
 class MustachioViewController < UIViewController
   def loadView
+    @debug = true
+
     self.view = UIView.alloc.initWithFrame(UIScreen.mainScreen.applicationFrame)
-    view.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight
-    view.autoresizesSubviews = true
-    #view.backgroundColor = UIColor.redColor
+    view.backgroundColor = UIColor.redColor if @debug
 
     @imageView = UIImageView.alloc.initWithFrame(view.bounds)
-    @imageView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight
     @imageView.contentMode = UIViewContentModeScaleAspectFit
     @imageView.userInteractionEnabled = true
     view.addSubview(@imageView)
@@ -21,8 +20,10 @@ class MustachioViewController < UIViewController
                                                                 target:self,
                                                                 action:'presentImagePickerController:')]
     view.addSubview(toolbar)
+  end
 
-    @debug_face = true # Set to true to debug face features.
+  def shouldAutorotateToInterfaceOrientation(orientation)
+    orientation == UIInterfaceOrientationPortrait
   end
 
   def presentImagePickerController(sender)
@@ -63,7 +64,7 @@ class MustachioViewController < UIViewController
       # should be added.
       next unless feature.hasMouthPosition and feature.hasLeftEyePosition and feature.hasRightEyePosition
 
-      if @debug_face
+      if @debug
         [feature.leftEyePosition,feature.rightEyePosition,feature.mouthPosition].each do |pt|
           v = UIView.alloc.initWithFrame CGRectMake(0, 0, 20, 20)
           v.backgroundColor = UIColor.greenColor.colorWithAlphaComponent(0.2)
@@ -92,10 +93,5 @@ class MustachioViewController < UIViewController
 
       @imageView.addSubview(mustacheView)
     end
-  end
-
-  def shouldAutorotateToInterfaceOrientation(*)
-    mustachify
-    true
   end
 end
