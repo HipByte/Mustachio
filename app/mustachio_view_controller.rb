@@ -1,10 +1,19 @@
 class MustachioViewController < UIViewController
+  def init
+    if super
+      @shownImagePickerOnce = false
+    end
+    self
+  end
+
   def loadView
     self.view = UIImageView.alloc.init
     @debug_face = true # Set to true to debug face features.
   end
 
   def viewDidLoad
+    super
+
     view.contentMode = UIViewContentModeScaleAspectFit
     view.userInteractionEnabled = true
 
@@ -17,7 +26,10 @@ class MustachioViewController < UIViewController
   end
 
   def viewDidAppear(animated)
-    return if view.image
+    super
+
+    return if @shownImagePickerOnce
+    @shownImagePickerOnce = true
 
     # TODO check that images can be loaded in some way.
     #UIImagePickerController.isSourceTypeAvailable(UIImagePickerControllerSourceTypePhotoLibrary)
@@ -38,6 +50,8 @@ class MustachioViewController < UIViewController
   end
 
   def mustachify
+    return if view.image.nil?
+
     # Remove previous mustaches.
     view.subviews.each { |v| v.removeFromSuperview }
 
@@ -85,10 +99,10 @@ class MustachioViewController < UIViewController
     end
   end
 
-  #def shouldAutorotateToInterfaceOrientation(*)
-    #mustachify
-    #true
-  #end
+  def shouldAutorotateToInterfaceOrientation(*)
+    mustachify
+    true
+  end
 
   def swipePreviousGesture(gesture)
     idx = @images.index(view.image)
