@@ -1,11 +1,4 @@
 class MustachioViewController < UIViewController
-  def init
-    if super
-      @shownImagePickerOnce = false
-    end
-    self
-  end
-
   def loadView
     self.view = UIImageView.alloc.init
     @debug_face = true # Set to true to debug face features.
@@ -25,12 +18,7 @@ class MustachioViewController < UIViewController
     view.addGestureRecognizer(nextGesture)
   end
 
-  def viewDidAppear(animated)
-    super
-
-    return if @shownImagePickerOnce
-    @shownImagePickerOnce = true
-
+  def presentImagePickerController(sender)
     # TODO check that images can be loaded in some way.
     #UIImagePickerController.isSourceTypeAvailable(UIImagePickerControllerSourceTypePhotoLibrary)
     #UIImagePickerController.isSourceTypeAvailable(UIImagePickerControllerSourceTypeCamera)
