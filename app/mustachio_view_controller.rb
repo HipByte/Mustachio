@@ -1,21 +1,28 @@
 class MustachioViewController < UIViewController
   def loadView
-    self.view = UIImageView.alloc.init
+    self.view = UIView.alloc.initWithFrame(UIScreen.mainScreen.applicationFrame)
+    view.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight
+    view.autoresizesSubviews = true
+    view.backgroundColor = UIColor.redColor
+
+    @imageView = UIImageView.alloc.initWithFrame(view.bounds)
+    @imageView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight
+    @imageView.contentMode = UIViewContentModeScaleAspectFit
+    @imageView.userInteractionEnabled = true
+    view.addSubview(@imageView)
+
+    toolbar = UIToolbar.new
+    toolbar.barStyle = UIBarStyleBlack
+    toolbar.translucent = true
+    # TODO weird one pixel offset, not thinking about this too much more right now
+    toolbar.frame = CGRectMake(0, view.bounds.size.height-44+1, view.bounds.size.width, 44)
+    toolbar.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight | UIViewAutoresizingFlexibleTopMargin
+    toolbar.items = [UIBarButtonItem.alloc.initWithBarButtonSystemItem(UIBarButtonSystemItemCamera,
+                                                                target:self,
+                                                                action:'presentImagePickerController:')]
+    view.addSubview(toolbar)
+
     @debug_face = true # Set to true to debug face features.
-  end
-
-  def viewDidLoad
-    super
-
-    view.contentMode = UIViewContentModeScaleAspectFit
-    view.userInteractionEnabled = true
-
-    previousGesture = UISwipeGestureRecognizer.alloc.initWithTarget(self, action:'swipePreviousGesture:')
-    previousGesture.direction = UISwipeGestureRecognizerDirectionLeft
-    view.addGestureRecognizer(previousGesture)
-    nextGesture = UISwipeGestureRecognizer.alloc.initWithTarget(self, action:'swipeNextGesture:')
-    nextGesture.direction = UISwipeGestureRecognizerDirectionRight
-    view.addGestureRecognizer(nextGesture)
   end
 
   def presentImagePickerController(sender)
@@ -31,25 +38,25 @@ class MustachioViewController < UIViewController
   end
 
   def imagePickerController(imagePickerController, didFinishPickingMediaWithInfo:info)
-    if view.image = info[UIImagePickerControllerEditedImage] || info[UIImagePickerControllerOriginalImage]
+    if @imageView.image = info[UIImagePickerControllerEditedImage] || info[UIImagePickerControllerOriginalImage]
       mustachify
     end
     dismissModalViewControllerAnimated(true)
   end
 
   def mustachify
-    return if view.image.nil?
+    return unless @imageView && @imageView.image
 
     # Remove previous mustaches.
-    view.subviews.each { |v| v.removeFromSuperview }
+    @imageView.subviews.each { |v| v.removeFromSuperview }
 
     # CoreImage used a coordinate system which is flipped on the Y axis
     # compared to UIKit. Also, a UIImageView can return an image larger than
     # itself. To properly translate points, we use an affine transform.
-    transform = CGAffineTransformMakeScale(view.bounds.size.width / view.image.size.width, -1 * (view.bounds.size.height / view.image.size.height))
-    transform = CGAffineTransformTranslate(transform, 0, -view.image.size.height)
+    transform = CGAffineTransformMakeScale(@imageView.bounds.size.width / @imageView.image.size.width, -1 * (@imageView.bounds.size.height / @imageView.image.size.height))
+    transform = CGAffineTransformTranslate(transform, 0, -@imageView.image.size.height)
 
-    image = CIImage.imageWithCGImage(view.image.CGImage)
+    image = CIImage.imageWithCGImage(@imageView.image.CGImage)
     @detector ||= CIDetector.detectorOfType CIDetectorTypeFace, context:nil, options: { CIDetectorAccuracy: CIDetectorAccuracyHigh }
     @detector.featuresInImage(image).each do |feature|
       # We need the mouth and eyes positions to determine where the mustache
@@ -62,7 +69,7 @@ class MustachioViewController < UIViewController
           v.backgroundColor = UIColor.greenColor.colorWithAlphaComponent(0.2)
           pt = CGPointApplyAffineTransform(pt, transform)
           v.center = pt
-          view.addSubview(v)
+          @imageView.addSubview(v)
         end
       end
 
@@ -83,34 +90,12 @@ class MustachioViewController < UIViewController
       mustacheAngle = Math.atan2(feature.leftEyePosition.x - feature.rightEyePosition.x, feature.leftEyePosition.y - feature.rightEyePosition.y) + Math::PI/2
       mustacheView.transform = CGAffineTransformMakeRotation(mustacheAngle) 
 
-      view.addSubview(mustacheView)
+      @imageView.addSubview(mustacheView)
     end
   end
 
   def shouldAutorotateToInterfaceOrientation(*)
     mustachify
     true
-  end
-
-  def swipePreviousGesture(gesture)
-    idx = @images.index(view.image)
-    view.image =
-      if idx == 0
-        @images.last
-      else
-        @images[idx - 1]
-      end
-    mustachify
-  end
-
-  def swipeNextGesture(gesture)
-    idx = @images.index(view.image)
-    view.image =
-      if idx == @images.size - 1
-        @images.first
-      else
-        @images[idx + 1]
-      end
-    mustachify
   end
 end
