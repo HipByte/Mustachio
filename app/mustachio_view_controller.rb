@@ -1,4 +1,4 @@
-class MustacheViewController < UIViewController
+class MustachioViewController < UIViewController
   def loadView
     self.view = UIImageView.alloc.init
     @debug_face = false # Set to true to debug face features.
