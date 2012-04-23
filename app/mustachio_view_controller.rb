@@ -18,17 +18,11 @@ class MustachioViewController < UIViewController
     toolbar.frame = CGRectMake(0, view.bounds.size.height-44+1, view.bounds.size.width, 44)
     toolbar.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight | UIViewAutoresizingFlexibleTopMargin
     toolbar.items = [
-      UIBarButtonItem.alloc.initWithBarButtonSystemItem(UIBarButtonSystemItemCamera,
-                                                 target:self,
-                                                 action:'presentImagePickerController:').tap { |b| b.style = UIBarButtonItemStyleBordered },
-      UIBarButtonItem.alloc.initWithBarButtonSystemItem(UIBarButtonSystemItemFlexibleSpace, target:nil, action:nil),
-      UIBarButtonItem.alloc.initWithBarButtonSystemItem(UIBarButtonSystemItemAction,
-                                                 target:self,
-                                                 action:'presentImagePickerController:').tap { |b| b.style = UIBarButtonItemStyleBordered },
-      UIBarButtonItem.alloc.initWithBarButtonSystemItem(UIBarButtonSystemItemFlexibleSpace, target:nil, action:nil),
-      UIBarButtonItem.alloc.initWithBarButtonSystemItem(UIBarButtonSystemItemSave,
-                                                 target:self,
-                                                 action:'presentImagePickerController:').tap { |b| b.style = UIBarButtonItemStyleBordered },
+      toolbarItem(UIBarButtonSystemItemCamera, target:self, action:'presentImagePickerController:'),
+      toolbarSpaceItem,
+      toolbarItem(UIBarButtonSystemItemAction, target:self, action:'tweetPhoto:'),
+      toolbarSpaceItem,
+      toolbarItem(UIBarButtonSystemItemSave,   target:self, action:'savePhoto:'),
     ]
     view.addSubview(toolbar)
   end
@@ -54,6 +48,14 @@ class MustachioViewController < UIViewController
       mustachify
     end
     dismissModalViewControllerAnimated(true)
+  end
+
+  def tweetPhoto(sender)
+    puts "TWEET"
+  end
+
+  def savePhoto(sender)
+    puts "SAVE"
   end
 
   def mustachify
@@ -104,5 +106,17 @@ class MustachioViewController < UIViewController
 
       @imageView.addSubview(mustacheView)
     end
+  end
+
+  private
+
+  def toolbarSpaceItem
+    toolbarItem(UIBarButtonSystemItemFlexibleSpace, target:nil, action:nil)
+  end
+
+  def toolbarItem(type, target:target, action:action)
+    item = UIBarButtonItem.alloc.initWithBarButtonSystemItem(type, target:target, action:action)
+    item.style = UIBarButtonItemStyleBordered if target
+    item
   end
 end
