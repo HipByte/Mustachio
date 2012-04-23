@@ -1,6 +1,6 @@
 class MustachioViewController < UIViewController
   def loadView
-    @debug = false
+    @debug = true
 
     self.view = UIView.alloc.initWithFrame(UIScreen.mainScreen.applicationFrame)
     view.backgroundColor = UIColor.redColor if @debug
@@ -17,13 +17,17 @@ class MustachioViewController < UIViewController
     # TODO weird one pixel offset, not thinking about this too much more right now
     toolbar.frame = CGRectMake(0, view.bounds.size.height-44+1, view.bounds.size.width, 44)
     toolbar.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight | UIViewAutoresizingFlexibleTopMargin
-    toolbar.items = [
-      toolbarItem(UIBarButtonSystemItemCamera, target:self, action:'presentImagePickerController:'),
-      toolbarSpaceItem,
-      toolbarItem(UIBarButtonSystemItemAction, target:self, action:'tweetPhoto:'),
-      toolbarSpaceItem,
-      toolbarItem(UIBarButtonSystemItemSave,   target:self, action:'savePhoto:'),
-    ]
+
+    items = []
+    items << toolbarItem(UIBarButtonSystemItemCamera, target:self, action:'presentImagePickerController:')
+    if TWTweetComposeViewController.canSendTweet || @debug
+      items << toolbarSpaceItem
+      items << toolbarItem(UIBarButtonSystemItemAction, target:self, action:'tweetPhoto:')
+    end
+    items << toolbarSpaceItem
+    items << toolbarItem(UIBarButtonSystemItemSave,   target:self, action:'savePhoto:')
+    toolbar.items = items
+
     view.addSubview(toolbar)
   end
 
@@ -51,7 +55,9 @@ class MustachioViewController < UIViewController
   end
 
   def tweetPhoto(sender)
-    puts "TWEET"
+    controller = TWTweetComposeViewController.new
+    controller.addImage(@imageView.image)
+    presentModalViewController(controller, animated:true)
   end
 
   def savePhoto(sender)
