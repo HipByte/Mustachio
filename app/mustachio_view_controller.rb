@@ -1,9 +1,8 @@
 class MustachioViewController < UIViewController
   def loadView
-    @debug = false
+    @debug = true
 
     self.view = UIView.alloc.initWithFrame(UIScreen.mainScreen.applicationFrame)
-    view.backgroundColor = UIColor.redColor if @debug
 
     @imageView = UIImageView.alloc.initWithFrame(view.bounds)
     @imageView.contentMode = UIViewContentModeScaleAspectFit
@@ -93,6 +92,25 @@ class MustachioViewController < UIViewController
     @tweetButton.enabled = enabled if @tweetButton
   end
 
+  def toolbarSpaceItem
+    toolbarItem(UIBarButtonSystemItemFlexibleSpace, target:nil, action:nil)
+  end
+
+  def toolbarItem(type, target:target, action:action)
+    item = UIBarButtonItem.alloc.initWithBarButtonSystemItem(type, target:target, action:action)
+    item.style = UIBarButtonItemStyleBordered if target
+    item
+  end
+
+  def mustacheImage
+    today = NSCalendar.currentCalendar.components(NSDayCalendarUnit | NSMonthCalendarUnit, fromDate:NSDate.date)
+    if @debug || (4 === today.month && (29..30) === today.day)
+      UIImage.imageNamed('mustache-orange.png')
+    else
+      UIImage.imageNamed('mustache.png')
+    end
+  end
+
   # TODO Currently we just render the layer of the image view, but this should
   # obviously change to completely render it in an offscreen context.
   def mustachify(image)
@@ -112,6 +130,12 @@ class MustachioViewController < UIViewController
       return image
     end
 
+    # CoreImage used a coordinate system which is flipped on the Y axis
+    # compared to UIKit. Also, a UIImageView can return an image larger than
+    # itself. To properly translate points, we use an affine transform.
+    transform = CGAffineTransformMakeScale(1, -1)
+    transform = CGAffineTransformTranslate(transform, 0, -size.height)
+
     features.each do |feature|
       # We need the mouth and eyes positions to determine where the mustache
       # should be added.
@@ -119,7 +143,7 @@ class MustachioViewController < UIViewController
 
       if @debug
         [feature.leftEyePosition,feature.rightEyePosition,feature.mouthPosition].each do |pt|
-          v = UIView.alloc.initWithFrame CGRectMake(0, 0, 20, 20)
+          v = UIView.alloc.initWithFrame(CGRectMake(0, 0, 20, 20))
           v.backgroundColor = UIColor.greenColor.colorWithAlphaComponent(0.2)
           pt = CGPointApplyAffineTransform(pt, transform)
           v.center = pt
@@ -129,7 +153,7 @@ class MustachioViewController < UIViewController
 
       # Create the mustache view.
       mustacheView = UIImageView.alloc.init
-      mustacheView.image = UIImage.imageNamed('mustache')
+      mustacheView.image = mustacheImage
       mustacheView.contentMode = UIViewContentModeScaleAspectFit
 
       # Compute its location and size, based on the position of the eyes and
@@ -138,12 +162,6 @@ class MustachioViewController < UIViewController
       h = feature.bounds.size.height / 5
       x = (feature.mouthPosition.x + (feature.leftEyePosition.x + feature.rightEyePosition.x) / 2) / 2 - w / 2
       y = feature.mouthPosition.y
-
-      # CoreImage used a coordinate system which is flipped on the Y axis
-      # compared to UIKit. Also, a UIImageView can return an image larger than
-      # itself. To properly translate points, we use an affine transform.
-      transform = CGAffineTransformMakeScale(1, -1)
-      transform = CGAffineTransformTranslate(transform, 0, -size.height)
       mustacheView.frame = CGRectApplyAffineTransform([[x, y], [w, h]], transform)
 
       # Apply a rotation on the mustache, based on the face inclination.
@@ -160,15 +178,5 @@ class MustachioViewController < UIViewController
     UIGraphicsEndImageContext()
 
     output
-  end
-
-  def toolbarSpaceItem
-    toolbarItem(UIBarButtonSystemItemFlexibleSpace, target:nil, action:nil)
-  end
-
-  def toolbarItem(type, target:target, action:action)
-    item = UIBarButtonItem.alloc.initWithBarButtonSystemItem(type, target:target, action:action)
-    item.style = UIBarButtonItemStyleBordered if target
-    item
   end
 end
