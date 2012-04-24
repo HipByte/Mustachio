@@ -16,17 +16,27 @@ class MustachioViewController < UIViewController
     toolbar.frame = CGRectMake(0, view.bounds.size.height-44+1, view.bounds.size.width, 44)
     toolbar.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight | UIViewAutoresizingFlexibleTopMargin
 
-    items = []
-    items << toolbarItem(UIBarButtonSystemItemCamera, target:self, action:'presentImagePickerController:')
     if TWTweetComposeViewController.canSendTweet || @debug
-      items << toolbarSpaceItem
-      items << toolbarItem(UIBarButtonSystemItemAction, target:self, action:'tweetPhoto:')
+      @tweetButton = toolbarItem(UIBarButtonSystemItemAction, target:self, action:'tweetPhoto:')
     end
-    items << toolbarSpaceItem
-    items << toolbarItem(UIBarButtonSystemItemSave,   target:self, action:'savePhoto:')
-    toolbar.items = items
+    toolbar.items = [
+      toolbarItem(UIBarButtonSystemItemCamera, target:self, action:'presentImagePickerController:'),
+      toolbarSpaceItem,
+      @tweetButton,
+      toolbarSpaceItem,
+      (@saveButton = toolbarItem(UIBarButtonSystemItemSave, target:self, action:'savePhoto:'))
+    ].compact
+
+    self.image = nil
 
     view.addSubview(toolbar)
+  end
+
+  def image=(image)
+    image = mustachify(image) if image
+    @imageView.image = image
+    @tweetButton.enabled = @saveButton.enabled = !image.nil?
+    image
   end
 
   def shouldAutorotateToInterfaceOrientation(orientation)
@@ -46,9 +56,7 @@ class MustachioViewController < UIViewController
   end
 
   def imagePickerController(imagePickerController, didFinishPickingMediaWithInfo:info)
-    if image = info[UIImagePickerControllerEditedImage] || info[UIImagePickerControllerOriginalImage]
-      @imageView.image = mustachify(image)
-    end
+    self.image = info[UIImagePickerControllerEditedImage] || info[UIImagePickerControllerOriginalImage]
     dismissModalViewControllerAnimated(true)
   end
 
@@ -72,6 +80,8 @@ class MustachioViewController < UIViewController
       puts "SAVED"
     end
   end
+
+  private
 
   # TODO Currently we just render the layer of the image view, but this should
   # obviously change to completely render it in an offscreen context.
@@ -130,8 +140,6 @@ class MustachioViewController < UIViewController
 
     output
   end
-
-  private
 
   def toolbarSpaceItem
     toolbarItem(UIBarButtonSystemItemFlexibleSpace, target:nil, action:nil)
