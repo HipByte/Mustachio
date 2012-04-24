@@ -91,7 +91,18 @@ class MustachioViewController < UIViewController
     imageView.image = image
 
     @detector ||= CIDetector.detectorOfType(CIDetectorTypeFace, context:nil, options: { CIDetectorAccuracy: CIDetectorAccuracyHigh })
-    @detector.featuresInImage(CIImage.imageWithCGImage(image.CGImage)).each do |feature|
+    features = @detector.featuresInImage(CIImage.imageWithCGImage(image.CGImage))
+
+    if features.empty?
+      UIAlertView.alloc.initWithTitle("So sorry…",
+                              message:"Unable to locate the required facial features. Cropping the image might help.",
+                             delegate:nil,
+                    cancelButtonTitle:"OK",
+                    otherButtonTitles:nil).show
+      return image
+    end
+
+    features.each do |feature|
       # We need the mouth and eyes positions to determine where the mustache
       # should be added.
       next unless feature.hasMouthPosition and feature.hasLeftEyePosition and feature.hasRightEyePosition
