@@ -20,11 +20,11 @@ class MustachioViewController < UIViewController
       @tweetButton = toolbarItem(UIBarButtonSystemItemAction, target:self, action:'tweetPhoto:')
     end
     toolbar.items = [
-      toolbarItem(UIBarButtonSystemItemCamera, target:self, action:'presentImagePickerController:'),
+      @imagePickerButton = toolbarItem(UIBarButtonSystemItemCamera, target:self, action:'presentImagePickerController:'),
       toolbarSpaceItem,
       @tweetButton,
       toolbarSpaceItem,
-      (@saveButton = toolbarItem(UIBarButtonSystemItemSave, target:self, action:'savePhoto:'))
+      @saveButton = toolbarItem(UIBarButtonSystemItemSave, target:self, action:'savePhoto:')
     ].compact
 
     self.image = nil
@@ -67,21 +67,21 @@ class MustachioViewController < UIViewController
   end
 
   def savePhoto(sender)
-    puts "SAVE"
-    #ALAssetsLibrary.writeImageDataToSavedPhotosAlbum(UIImageJPEGRepresentation(@imageView.image, 1), metadata:nil, completionBlock:nil)
-    #ALAssetsLibrary.send('writeImageDataToSavedPhotosAlbum:metadata:completionBlock:', UIImageJPEGRepresentation(@imageView.image, 1), {}, proc {})
+    enableButtons(false)
     UIImageWriteToSavedPhotosAlbum(@imageView.image, self, 'image:didFinishSavingWithError:contextInfo:', nil)
   end
 
   def image(image, didFinishSavingWithError:error, contextInfo:info)
-    if error
-      puts "ERROR: #{error.localizedDescription}"
-    else
-      puts "SAVED"
-    end
+    after_delay(0.3) { enableButtons(true) }
+    puts "ERROR: #{error.localizedDescription}" if error
   end
 
   private
+
+  def enableButtons(enabled)
+    @imagePickerButton.enabled = @saveButton.enabled = enabled
+    @tweetButton.enabled = enabled if @tweetButton
+  end
 
   # TODO Currently we just render the layer of the image view, but this should
   # obviously change to completely render it in an offscreen context.

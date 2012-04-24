@@ -4,7 +4,11 @@ class AppDelegate
     @window.rootViewController = MustachioViewController.alloc.init
     @window.rootViewController.wantsFullScreenLayout = true
     @window.makeKeyAndVisible
-    @window.rootViewController.performSelector('presentImagePickerController:', withObject:self, afterDelay:0)
+
+    after_delay 0 do
+      @window.rootViewController.presentImagePickerController(self)
+    end
+
     return true
   end
 end
