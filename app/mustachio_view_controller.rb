@@ -60,6 +60,17 @@ class MustachioViewController < UIViewController
 
   def savePhoto(sender)
     puts "SAVE"
+    #ALAssetsLibrary.writeImageDataToSavedPhotosAlbum(UIImageJPEGRepresentation(@imageView.image, 1), metadata:nil, completionBlock:nil)
+    #ALAssetsLibrary.send('writeImageDataToSavedPhotosAlbum:metadata:completionBlock:', UIImageJPEGRepresentation(@imageView.image, 1), {}, proc {})
+    UIImageWriteToSavedPhotosAlbum(@imageView.image, self, 'image:didFinishSavingWithError:contextInfo:', nil)
+  end
+
+  def image(image, didFinishSavingWithError:error, contextInfo:info)
+    if error
+      puts "ERROR: #{error.localizedDescription}"
+    else
+      puts "SAVED"
+    end
   end
 
   # TODO Currently we just render the layer of the image view, but this should
