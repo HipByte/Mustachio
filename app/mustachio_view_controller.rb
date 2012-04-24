@@ -1,6 +1,6 @@
 class MustachioViewController < UIViewController
   def loadView
-    @debug = true
+    @debug = false
 
     self.view = UIView.alloc.initWithFrame(UIScreen.mainScreen.applicationFrame)
     view.backgroundColor = UIColor.redColor if @debug
@@ -48,8 +48,8 @@ class MustachioViewController < UIViewController
   end
 
   def imagePickerController(imagePickerController, didFinishPickingMediaWithInfo:info)
-    if @imageView.image = info[UIImagePickerControllerEditedImage] || info[UIImagePickerControllerOriginalImage]
-      mustachify
+    if image = info[UIImagePickerControllerEditedImage] || info[UIImagePickerControllerOriginalImage]
+      @imageView.image = mustachify(image)
     end
     dismissModalViewControllerAnimated(true)
   end
@@ -66,21 +66,13 @@ class MustachioViewController < UIViewController
 
   # TODO Currently we just render the layer of the image view, but this should
   # obviously change to completely render it in an offscreen context.
-  def mustachify
-    return unless @imageView && @imageView.image
+  def mustachify(image)
+    size            = image.size
+    imageView       = UIImageView.alloc.initWithFrame([[0, 0], size.to_a])
+    imageView.image = image
 
-    # Remove previous mustaches.
-    @imageView.subviews.each { |v| v.removeFromSuperview }
-
-    # CoreImage used a coordinate system which is flipped on the Y axis
-    # compared to UIKit. Also, a UIImageView can return an image larger than
-    # itself. To properly translate points, we use an affine transform.
-    transform = CGAffineTransformMakeScale(@imageView.bounds.size.width / @imageView.image.size.width, -(@imageView.bounds.size.height / @imageView.image.size.height))
-    transform = CGAffineTransformTranslate(transform, 0, -@imageView.image.size.height)
-
-    image = CIImage.imageWithCGImage(@imageView.image.CGImage)
     @detector ||= CIDetector.detectorOfType(CIDetectorTypeFace, context:nil, options: { CIDetectorAccuracy: CIDetectorAccuracyHigh })
-    @detector.featuresInImage(image).each do |feature|
+    @detector.featuresInImage(CIImage.imageWithCGImage(image.CGImage)).each do |feature|
       # We need the mouth and eyes positions to determine where the mustache
       # should be added.
       next unless feature.hasMouthPosition and feature.hasLeftEyePosition and feature.hasRightEyePosition
@@ -91,7 +83,7 @@ class MustachioViewController < UIViewController
           v.backgroundColor = UIColor.greenColor.colorWithAlphaComponent(0.2)
           pt = CGPointApplyAffineTransform(pt, transform)
           v.center = pt
-          @imageView.addSubview(v)
+          imageView.addSubview(v)
         end
       end
 
@@ -106,21 +98,28 @@ class MustachioViewController < UIViewController
       h = feature.bounds.size.height / 5
       x = (feature.mouthPosition.x + (feature.leftEyePosition.x + feature.rightEyePosition.x) / 2) / 2 - w / 2
       y = feature.mouthPosition.y
+
+      # CoreImage used a coordinate system which is flipped on the Y axis
+      # compared to UIKit. Also, a UIImageView can return an image larger than
+      # itself. To properly translate points, we use an affine transform.
+      transform = CGAffineTransformMakeScale(1, -1)
+      transform = CGAffineTransformTranslate(transform, 0, -size.height)
       mustacheView.frame = CGRectApplyAffineTransform([[x, y], [w, h]], transform)
 
       # Apply a rotation on the mustache, based on the face inclination.
-      mustacheAngle = Math.atan2(feature.leftEyePosition.x - feature.rightEyePosition.x, feature.leftEyePosition.y - feature.rightEyePosition.y) + Math::PI/2
-      mustacheView.transform = CGAffineTransformMakeRotation(mustacheAngle) 
+      mustacheAngle = Math.atan2(feature.leftEyePosition.x - feature.rightEyePosition.x,
+                                 feature.leftEyePosition.y - feature.rightEyePosition.y) + Math::PI/2
+      mustacheView.transform = CGAffineTransformMakeRotation(mustacheAngle)
 
-      @imageView.addSubview(mustacheView)
+      imageView.addSubview(mustacheView)
     end
 
-    UIGraphicsBeginImageContext(@imageView.frame.size)
-    @imageView.layer.renderInContext(UIGraphicsGetCurrentContext())
+    UIGraphicsBeginImageContext(size)
+    imageView.layer.renderInContext(UIGraphicsGetCurrentContext())
     output = UIGraphicsGetImageFromCurrentImageContext()
     UIGraphicsEndImageContext()
 
-    @imageView.image = output
+    output
   end
 
   private
