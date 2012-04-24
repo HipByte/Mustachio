@@ -1,6 +1,6 @@
 class MustachioViewController < UIViewController
   def loadView
-    @debug = true
+    @debug = false
 
     self.view = UIView.alloc.initWithFrame(UIScreen.mainScreen.applicationFrame)
 
@@ -81,7 +81,11 @@ class MustachioViewController < UIViewController
                     cancelButtonTitle:"OK",
                     otherButtonTitles:nil).show
     else
-      after_delay(0.3) { enableButtons(true) }
+      presentImagePickerController(self)
+      # Prettier
+      after_delay 0.2 do
+        enableButtons(true)
+      end
     end
   end
 
