@@ -1,0 +1,4 @@
+1. Disable buttons when no image is selected.
+2. If no face found, show alert.
+3. Disable buttons while saving.
+4. Use SVProgressHUD?
