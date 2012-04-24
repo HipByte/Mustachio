@@ -7,12 +7,10 @@ class MustachioViewController < UIViewController
 
     @imageView = UIImageView.alloc.initWithFrame(view.bounds)
     @imageView.contentMode = UIViewContentModeScaleAspectFit
-    @imageView.userInteractionEnabled = true
     view.addSubview(@imageView)
 
     toolbar = UIToolbar.new
     toolbar.barStyle = UIBarStyleBlack
-    #toolbar.translucent = true
 
     # TODO weird one pixel offset, not thinking about this too much more right now
     toolbar.frame = CGRectMake(0, view.bounds.size.height-44+1, view.bounds.size.width, 44)
@@ -43,7 +41,7 @@ class MustachioViewController < UIViewController
 
     imagePickerController = UIImagePickerController.new
     imagePickerController.delegate = self
-    #imagePickerController.allowsEditing = true
+    imagePickerController.allowsEditing = true
     presentModalViewController(imagePickerController, animated:true)
   end
 
