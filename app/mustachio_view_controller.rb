@@ -64,6 +64,8 @@ class MustachioViewController < UIViewController
     puts "SAVE"
   end
 
+  # TODO Currently we just render the layer of the image view, but this should
+  # obviously change to completely render it in an offscreen context.
   def mustachify
     return unless @imageView && @imageView.image
 
@@ -112,6 +114,13 @@ class MustachioViewController < UIViewController
 
       @imageView.addSubview(mustacheView)
     end
+
+    UIGraphicsBeginImageContext(@imageView.frame.size)
+    @imageView.layer.renderInContext(UIGraphicsGetCurrentContext())
+    output = UIGraphicsGetImageFromCurrentImageContext()
+    UIGraphicsEndImageContext()
+
+    @imageView.image = output
   end
 
   private
