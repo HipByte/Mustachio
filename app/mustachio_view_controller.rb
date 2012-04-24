@@ -68,12 +68,22 @@ class MustachioViewController < UIViewController
 
   def savePhoto(sender)
     enableButtons(false)
+    # Enable to trigger error.
+    # return UIImageWriteToSavedPhotosAlbum(nil, self, 'image:didFinishSavingWithError:contextInfo:', nil)
     UIImageWriteToSavedPhotosAlbum(@imageView.image, self, 'image:didFinishSavingWithError:contextInfo:', nil)
   end
 
   def image(image, didFinishSavingWithError:error, contextInfo:info)
-    after_delay(0.3) { enableButtons(true) }
-    puts "ERROR: #{error.localizedDescription}" if error
+    if error
+      enableButtons(true)
+      UIAlertView.alloc.initWithTitle("So sorry…",
+                              message:error.localizedDescription,
+                             delegate:nil,
+                    cancelButtonTitle:"OK",
+                    otherButtonTitles:nil).show
+    else
+      after_delay(0.3) { enableButtons(true) }
+    end
   end
 
   private
