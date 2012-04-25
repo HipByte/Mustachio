@@ -34,7 +34,8 @@ class MustachioViewController < UIViewController
   def image=(image)
     image = mustachify(image) if image
     @imageView.image = image
-    @tweetButton.enabled = @saveButton.enabled = !image.nil?
+    @saveButton.enabled = !image.nil?
+    @tweetButton.enabled = !image.nil? if @tweetButton
     image
   end
 
