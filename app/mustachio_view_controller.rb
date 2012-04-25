@@ -43,16 +43,66 @@ class MustachioViewController < UIViewController
     orientation == UIInterfaceOrientationPortrait
   end
 
-  def presentImagePickerController(sender)
-    # TODO check that images can be loaded in some way.
-    #UIImagePickerController.isSourceTypeAvailable(UIImagePickerControllerSourceTypePhotoLibrary)
-    #UIImagePickerController.isSourceTypeAvailable(UIImagePickerControllerSourceTypeCamera)
-    #UIImagePickerController.isSourceTypeAvailable(UIImagePickerControllerSourceTypeSavedPhotosAlbum)
-
+  def presentImagePickerControllerForSourceType(sourceType)
     imagePickerController = UIImagePickerController.new
     imagePickerController.delegate = self
+    imagePickerController.sourceType = sourceType
     imagePickerController.allowsEditing = true
     presentModalViewController(imagePickerController, animated:true)
+  end
+
+  def presentImagePickerController(sender)
+    sources = []
+    sources << :library if UIImagePickerController.isSourceTypeAvailable(UIImagePickerControllerSourceTypePhotoLibrary)
+    sources << :saved   if UIImagePickerController.isSourceTypeAvailable(UIImagePickerControllerSourceTypeSavedPhotosAlbum)
+    sources << :camera  if UIImagePickerController.isSourceTypeAvailable(UIImagePickerControllerSourceTypeCamera) || @debug
+
+    case sources
+    when [:library]
+      presentImagePickerControllerForSourceType(UIImagePickerControllerSourceTypePhotoLibrary)
+    when [:saved]
+      presentImagePickerControllerForSourceType(UIImagePickerControllerSourceTypeSavedPhotosAlbum)
+    when [:library, :saved]
+      presentImagePickerControllerForSourceType(UIImagePickerControllerSourceTypePhotoLibrary | UIImagePickerControllerSourceTypeSavedPhotosAlbum)
+    when [:camera]
+      presentImagePickerControllerForSourceType(UIImagePickerControllerSourceTypeCamera)
+    else
+      if !sources.empty?
+        sheet = UIActionSheet.alloc.initWithTitle(nil,
+                                         delegate:self,
+                                cancelButtonTitle:nil,
+                           destructiveButtonTitle:nil,
+                                otherButtonTitles:nil)
+                                # BUG: using this on RM only works once, crashes on the second time
+                                #otherButtonTitles:'Take Photo', 'Choose From Library')
+        sheet.addButtonWithTitle('Take Photo')
+        sheet.addButtonWithTitle('Choose From Library')
+        sheet.cancelButtonIndex = sheet.addButtonWithTitle('Cancel')
+        sheet.showFromBarButtonItem(@imagePickerButton, animated:true)
+      else
+        UIAlertView.alloc.initWithTitle("So Sorry…",
+                                message:"Unable to access your photo library or camera.",
+                               delegate:nil,
+                      cancelButtonTitle:"OK",
+                      otherButtonTitles:nil).show
+      end
+    end
+  end
+
+  def actionSheet(sheet, didDismissWithButtonIndex:buttonIndex)
+    case buttonIndex
+    when 0
+      presentImagePickerControllerForSourceType(UIImagePickerControllerSourceTypeCamera)
+    when 1
+      sourceType = 0
+      if UIImagePickerController.isSourceTypeAvailable(UIImagePickerControllerSourceTypePhotoLibrary)
+        sourceType |= UIImagePickerControllerSourceTypePhotoLibrary
+      end
+      if UIImagePickerController.isSourceTypeAvailable(UIImagePickerControllerSourceTypeSavedPhotosAlbum)
+        sourceType |= UIImagePickerControllerSourceTypeSavedPhotosAlbum
+      end
+      presentImagePickerControllerForSourceType(sourceType)
+    end
   end
 
   def imagePickerController(imagePickerController, didFinishPickingMediaWithInfo:info)
@@ -63,6 +113,14 @@ class MustachioViewController < UIViewController
   def tweetPhoto(sender)
     controller = TWTweetComposeViewController.new
     controller.addImage(@imageView.image)
+    controller.completionHandler = lambda do |result|
+      case result
+      when TWTweetComposeViewControllerResultDone
+        puts "Tweet posted successfully."
+      when TWTweetComposeViewControllerResultCancelled
+        puts "Tweet was cancelled, or an error occurred."
+      end
+    end
     presentModalViewController(controller, animated:true)
   end
 
@@ -76,7 +134,7 @@ class MustachioViewController < UIViewController
   def image(image, didFinishSavingWithError:error, contextInfo:info)
     if error
       enableButtons(true)
-      UIAlertView.alloc.initWithTitle("So sorry…",
+      UIAlertView.alloc.initWithTitle("So Sorry…",
                               message:error.localizedDescription,
                              delegate:nil,
                     cancelButtonTitle:"OK",
@@ -127,7 +185,7 @@ class MustachioViewController < UIViewController
     features = @detector.featuresInImage(CIImage.imageWithCGImage(image.CGImage))
 
     if features.empty?
-      UIAlertView.alloc.initWithTitle("So sorry…",
+      UIAlertView.alloc.initWithTitle("So Sorry…",
                               message:"Unable to locate the required facial features. Cropping the image might help.",
                              delegate:nil,
                     cancelButtonTitle:"OK",
